@@ -1,0 +1,464 @@
+library(openxlsx)
+library(vegan)
+library(ggplot2)
+
+## 多样性与土壤元素
+env_fac<-read.csv("RDA分析多样性.csv",row.names = 1)
+env<-data.frame(env_fac[,c(12:20)])
+fac<-data.frame(env_fac[,26:33])
+
+decorana(fac)
+
+rda<-rda(fac~.,env, scale=TRUE)
+rdaI<-summary(rda,scaling = 1)
+rdaI$concont$importance
+axixtest<-anova(rda,by="axis",permutations = 999)
+axixtest$`Pr(>F)`<-p.adjust(axixtest$`Pr(>F)`,method = "fdr")
+
+vif.cca(rda)
+plot(rda)
+
+env<-env[,-1]
+env<-env[,-5]
+env<-env[,-6]
+
+
+set.seed(46346)
+test<-permutest(rda,permutations = 999)   ###检验环境因子整体对模型的显著影响P
+envfit.allfactors<-envfit(rda,env,permutations = 999)   ###检验所有环境因子对模型的影响P
+envfit.allfactors
+r2<-data.frame(r2=envfit.allfactors$vectors$r)
+r2$factor<-row.names(r2)
+r2$pvalue<-envfit.allfactors$vectors$pvals
+r2$color<-ifelse(r2$pvalue>=0.05,"olivedrab1","mediumpurple2")
+
+Pvalue<-envfit.allfactors$vectors$pvals
+(r.fig<-ggplot()+
+    geom_point(data=r2,aes(x=r2,y=factor,color=color,size=r2))+
+    geom_segment(data=r2,aes(x=0,xend=r2,y=factor,yend=factor),size=1))
+
+
+rda.sample<-data.frame(rdaI$sites[,1:2])   ###提取样本得分
+class<-data.frame(class=c(rep("S",4),rep("RF",3),rep("A",3)))
+rda.sample$class<-class$class
+
+rda.otu<-data.frame(rdaI$species[,1:2])                 ###提取otu得分
+rda.otu$phylum<-row.names(rda.otu)
+
+rda.env<-data.frame(rdaI$biplot[,1:2])            ###提取环境因子得分
+rda.env$factor<-row.names(rda.env)
+
+rdaI$concont$importance                                   ###提取RDA的x轴和y轴得分比较麻烦，需要经过3个步骤
+
+dev.new()
+(rda.fig<-
+    ggplot()+
+    geom_vline(xintercept = 0, color = 'grey20', size = 0.5,linetype="dashed")+
+    geom_hline(yintercept = 0, color = 'grey20', size = 0.5,linetype="dashed")+
+    theme_bw()+theme(panel.grid.major=element_line(color=NA),panel.grid.minor=element_blank())+
+    geom_point(data=rda.sample,aes(x=RDA1,y=RDA2,color=class),size=5)+
+    scale_color_manual(values =c("darkgoldenrod1","darkolivegreen2","deepskyblue2"),limits=c("A","RF","S"))+
+    geom_segment(data=rda.env,aes(x=0,xend=RDA1*5,y=0,yend=RDA2*5),color="dodgerblue4",size=1,
+                 arrow=arrow(angle = 35,length=unit(0.2,"cm")))+
+    geom_text(data=rda.env,aes(x=RDA1*5.1,y=RDA2*5.1,label=factor),size=4,color="dodgerblue4")+
+    geom_segment(data=rda.otu,aes(x=0,xend=RDA1,y=0,yend=RDA2),colour="coral",size=1,
+                 arrow=arrow(angle = 35,length=unit(0.2,"cm")))+
+    geom_text(data=rda.otu,aes(x=RDA1,y=RDA2,label=phylum),colour="coral",size=4))
+
+# 绘制饼图
+values <- c(84.42, 15.58)
+labels <- c("84.42%", "15.58")
+dev.new()
+pie(values, labels = labels, col = c("#DAB174", "#E64B35CC"), main = "Pie Chart Example")
+
+
+## 多样性与碳化学结构
+env2<-data.frame(env_fac[,c(8,10,22,24)])
+fac<-data.frame(env_fac[,26:33])
+
+
+decorana(fac)
+
+rda<-rda(fac~.,env2, scale=TRUE)
+rdaI<-summary(rda,scaling = 1)
+rdaI$concont$importance
+axixtest<-anova(rda,by="axis",permutations = 999)
+axixtest$`Pr(>F)`<-p.adjust(axixtest$`Pr(>F)`,method = "fdr")
+
+vif.cca(rda)
+plot(rda)
+
+
+set.seed(32654165)
+test<-permutest(rda,permutations = 999)   ###检验环境因子整体对模型的显著影响P
+envfit.allfactors<-envfit(rda,env2,permutations = 999)   ###检验所有环境因子对模型的影响P
+envfit.allfactors
+r2<-data.frame(r2=envfit.allfactors$vectors$r)
+r2$factor<-row.names(r2)
+r2$pvalue<-envfit.allfactors$vectors$pvals
+r2$color<-ifelse(r2$pvalue>=0.05,"olivedrab1","mediumpurple2")
+
+Pvalue<-envfit.allfactors$vectors$pvals
+(r.fig<-ggplot()+
+    geom_point(data=r2,aes(x=r2,y=factor,color=color,size=r2))+
+    geom_segment(data=r2,aes(x=0,xend=r2,y=factor,yend=factor),size=1))
+
+
+rda.sample<-data.frame(rdaI$sites[,1:2])   ###提取样本得分
+class<-data.frame(class=c(rep("S",4),rep("RF",3),rep("A",3)))
+rda.sample$class<-class$class
+
+rda.otu<-data.frame(rdaI$species[,1:2])                 ###提取otu得分
+rda.otu$phylum<-row.names(rda.otu)
+
+rda.env<-data.frame(rdaI$biplot[,1:2])            ###提取环境因子得分
+rda.env$factor<-row.names(rda.env)
+
+rdaI$concont$importance                                   ###提取RDA的x轴和y轴得分比较麻烦，需要经过3个步骤
+
+dev.new()
+(rda.fig<-
+    ggplot()+
+    geom_vline(xintercept = 0, color = 'grey20', size = 0.5,linetype="dashed")+
+    geom_hline(yintercept = 0, color = 'grey20', size = 0.5,linetype="dashed")+
+    theme_bw()+theme(panel.grid.major=element_line(color=NA),panel.grid.minor=element_blank())+
+    geom_point(data=rda.sample,aes(x=RDA1,y=RDA2,color=class),size=5)+
+    scale_color_manual(values =c("darkgoldenrod1","darkolivegreen2","deepskyblue2"),limits=c("A","RF","S"))+
+    geom_segment(data=rda.env,aes(x=0,xend=RDA1*5,y=0,yend=RDA2*5),color="dodgerblue4",size=1,
+                 arrow=arrow(angle = 35,length=unit(0.2,"cm")))+
+    geom_text(data=rda.env,aes(x=RDA1*5.1,y=RDA2*5.1,label=factor),size=4,color="dodgerblue4")+
+    geom_segment(data=rda.otu,aes(x=0,xend=RDA1,y=0,yend=RDA2),colour="coral",size=1,
+                 arrow=arrow(angle = 35,length=unit(0.2,"cm")))+
+    geom_text(data=rda.otu,aes(x=RDA1,y=RDA2,label=phylum),colour="coral",size=4))
+#绘制饼状图
+values <- c(61.04, 38.96)
+labels <- c("61.04%", "38.96%")
+dev.new()
+pie(values, labels = labels, col = c("#DAB174", "#E64B35CC"), main = "Pie Chart Example")
+
+
+
+### VPA分析
+library(ecodist)
+sample<-data.frame(sample=c(rep("S",4),rep("RF",3),rep("A",3)))
+sample$sample<-as.factor(sample$sample)
+env_fac<-cbind(env_fac,sample)
+
+
+
+rda.vpa<-varpart(fac,~PC + PP + Palg,
+                 ~SCP + STP + SAVP + SAN + Sai,data = env_fac,chisquare = FALSE)
+rda.vpa<-varpart(fac,~PC + PP + Palg,
+                 ~SCP + STP + SAVP + SAN + Shg,data = env_fac,chisquare = FALSE)
+rda.vpa
+str(rda.vpa)
+rda
+
+rda<-rda(fac~PC + PP + Palg + SCP + STP + SAVP + SAN + Shg,data=env_fac)
+anova(rda)
+
+env<-env_fac[,c(1:25)]
+rda<-rda(fac~.,env, scale=TRUE)
+rdaI<-summary(rda,scaling = 1)
+rdaI$concont$importance
+
+vif.cca(rda)
+env<-env[,-2]
+env<-env[,-8]
+env<-env[,-7]
+env<-env[,-1]
+env<-env[,-6]
+env<-env[,-7]
+env<-env[,-6]
+env<-env[,-8]
+env<-env[,-1]
+env<-env[,-2]
+env<-env[,-7]
+env<-env[,-9]
+env<-env[,-9]
+env<-env[,-7]
+env<-env[,-8]
+env<-env[,-9]
+env<-env[,-9]
+
+## 检测显著性
+
+
+
+formula_X1<-formula(fac~PC + PP + Palg)
+anova(rda(formula_X1,data=env_fac))
+formula_X2<-formula(fac~SCP + STP + SAVP + SAN + Shg)
+anova(rda(formula_X2,data=env_fac))
+formula_X1X2<-formula(fac,~PC + PP + Palg,~SCP + STP + SAVP + SAN + Shg)
+anova(rda(formula_X1X2,data=env_fac))
+
+formula_X1X2<-formula(fac~PC + PP + Palg,~SCP + STP + SAVP + SAN + Shg)
+anova(rda(formula_X1X2,data=env_fac))
+summary(formula_X1X2)
+
+
+### 群落组成与植物
+# 叶片元素
+env_fac<-read.csv("RDA分析多样性.csv",row.names = 1)
+env<-data.frame(env_fac[,c(1:6)])
+fac<-data.frame(env_fac[,34:40])
+
+decorana(fac)
+
+rda<-rda(fac~.,env, scale=TRUE)
+rdaI<-summary(rda,scaling = 1)
+rdaI$concont$importance
+axixtest<-anova(rda,by="axis",permutations = 999)
+axixtest$`Pr(>F)`<-p.adjust(axixtest$`Pr(>F)`,method = "fdr")
+
+vif.cca(rda)
+plot(rda)
+
+env<-env[,-8]
+env<-env[,-6]
+env<-env[,-4]
+env<-env[,-7]
+
+
+set.seed(343165)
+test<-permutest(rda,permutations = 999)   ###检验环境因子整体对模型的显著影响P
+test
+envfit.allfactors<-envfit(rda,env,permutations = 999)   ###检验所有环境因子对模型的影响P
+envfit.allfactors
+r2<-data.frame(r2=envfit.allfactors$vectors$r)
+r2$factor<-row.names(r2)
+r2$pvalue<-envfit.allfactors$vectors$pvals
+r2$color<-ifelse(r2$pvalue>=0.05,"olivedrab1","mediumpurple2")
+
+Pvalue<-envfit.allfactors$vectors$pvals
+(r.fig<-ggplot()+
+    geom_point(data=r2,aes(x=r2,y=factor,color=color,size=r2))+
+    geom_segment(data=r2,aes(x=0,xend=r2,y=factor,yend=factor),size=1))
+
+
+rda.sample<-data.frame(rdaI$sites[,1:2])   ###提取样本得分
+class<-data.frame(class=c(rep("S",4),rep("RF",3),rep("A",3)))
+rda.sample$class<-class$class
+
+rda.otu<-data.frame(rdaI$species[,1:2])                 ###提取otu得分
+rda.otu$phylum<-row.names(rda.otu)
+
+rda.env<-data.frame(rdaI$biplot[,1:2])            ###提取环境因子得分
+rda.env$factor<-row.names(rda.env)
+
+rdaI$concont$importance                                   ###提取RDA的x轴和y轴得分比较麻烦，需要经过3个步骤
+
+dev.new()
+(rda.fig<-
+    ggplot()+
+    geom_vline(xintercept = 0, color = 'grey20', size = 0.5,linetype="dashed")+
+    geom_hline(yintercept = 0, color = 'grey20', size = 0.5,linetype="dashed")+
+    theme_bw()+theme(panel.grid.major=element_line(color=NA),panel.grid.minor=element_blank())+
+    geom_point(data=rda.sample,aes(x=RDA1,y=RDA2,color=class),size=5)+
+    scale_color_manual(values =c("darkgoldenrod1","darkolivegreen2","deepskyblue2"),limits=c("A","RF","S"))+
+    geom_segment(data=rda.env,aes(x=0,xend=RDA1*5,y=0,yend=RDA2*5),color="dodgerblue4",size=1,
+                 arrow=arrow(angle = 35,length=unit(0.2,"cm")))+
+    geom_text(data=rda.env,aes(x=RDA1*5.1,y=RDA2*5.1,label=factor),size=4,color="dodgerblue4")+
+    geom_segment(data=rda.otu,aes(x=0,xend=RDA1,y=0,yend=RDA2),colour="coral",size=1,
+                 arrow=arrow(angle = 35,length=unit(0.2,"cm")))+
+    geom_text(data=rda.otu,aes(x=RDA1,y=RDA2,label=phylum),colour="coral",size=4))
+
+### 群落组成与植物
+# 叶片碳
+env_fac<-read.csv("RDA分析多样性.csv",row.names = 1)
+env<-data.frame(env_fac[,c(7:10)])
+fac<-data.frame(env_fac[,34:40])
+
+decorana(fac)
+
+rda<-rda(fac~.,env, scale=TRUE)
+rdaI<-summary(rda,scaling = 1)
+rdaI$concont$importance
+axixtest<-anova(rda,by="axis",permutations = 999)
+axixtest$`Pr(>F)`<-p.adjust(axixtest$`Pr(>F)`,method = "fdr")
+
+vif.cca(rda)
+plot(rda)
+
+env<-env[,-8]
+env<-env[,-6]
+env<-env[,-4]
+env<-env[,-7]
+
+
+set.seed(643215)
+test<-permutest(rda,permutations = 999)   ###检验环境因子整体对模型的显著影响P
+test
+envfit.allfactors<-envfit(rda,env,permutations = 999)   ###检验所有环境因子对模型的影响P
+envfit.allfactors
+r2<-data.frame(r2=envfit.allfactors$vectors$r)
+r2$factor<-row.names(r2)
+r2$pvalue<-envfit.allfactors$vectors$pvals
+r2$color<-ifelse(r2$pvalue>=0.05,"olivedrab1","mediumpurple2")
+
+Pvalue<-envfit.allfactors$vectors$pvals
+(r.fig<-ggplot()+
+    geom_point(data=r2,aes(x=r2,y=factor,color=color,size=r2))+
+    geom_segment(data=r2,aes(x=0,xend=r2,y=factor,yend=factor),size=1))
+
+
+rda.sample<-data.frame(rdaI$sites[,1:2])   ###提取样本得分
+class<-data.frame(class=c(rep("S",4),rep("RF",3),rep("A",3)))
+rda.sample$class<-class$class
+
+rda.otu<-data.frame(rdaI$species[,1:2])                 ###提取otu得分
+rda.otu$phylum<-row.names(rda.otu)
+
+rda.env<-data.frame(rdaI$biplot[,1:2])            ###提取环境因子得分
+rda.env$factor<-row.names(rda.env)
+
+rdaI$concont$importance                                   ###提取RDA的x轴和y轴得分比较麻烦，需要经过3个步骤
+
+dev.new()
+(rda.fig<-
+    ggplot()+
+    geom_vline(xintercept = 0, color = 'grey20', size = 0.5,linetype="dashed")+
+    geom_hline(yintercept = 0, color = 'grey20', size = 0.5,linetype="dashed")+
+    theme_bw()+theme(panel.grid.major=element_line(color=NA),panel.grid.minor=element_blank())+
+    geom_point(data=rda.sample,aes(x=RDA1,y=RDA2,color=class),size=5)+
+    scale_color_manual(values =c("darkgoldenrod1","darkolivegreen2","deepskyblue2"),limits=c("A","RF","S"))+
+    geom_segment(data=rda.env,aes(x=0,xend=RDA1*5,y=0,yend=RDA2*5),color="dodgerblue4",size=1,
+                 arrow=arrow(angle = 35,length=unit(0.2,"cm")))+
+    geom_text(data=rda.env,aes(x=RDA1*5.1,y=RDA2*5.1,label=factor),size=4,color="dodgerblue4")+
+    geom_segment(data=rda.otu,aes(x=0,xend=RDA1,y=0,yend=RDA2),colour="coral",size=1,
+                 arrow=arrow(angle = 35,length=unit(0.2,"cm")))+
+    geom_text(data=rda.otu,aes(x=RDA1,y=RDA2,label=phylum),colour="coral",size=4))
+
+
+### 群落组成与土壤
+# 土壤元素
+env_fac<-read.csv("RDA分析多样性.csv",row.names = 1)
+env<-data.frame(env_fac[,c(12:20)])
+fac<-data.frame(env_fac[,34:40])
+
+decorana(fac)
+
+rda<-rda(fac~.,env, scale=TRUE)
+rdaI<-summary(rda,scaling = 1)
+rdaI$concont$importance
+axixtest<-anova(rda,by="axis",permutations = 999)
+axixtest$`Pr(>F)`<-p.adjust(axixtest$`Pr(>F)`,method = "fdr")
+
+vif.cca(rda)
+plot(rda)
+
+env<-env[,-8]
+env<-env[,-6]
+env<-env[,-4]
+env<-env[,-7]
+
+
+set.seed(64231)
+test<-permutest(rda,permutations = 999)   ###检验环境因子整体对模型的显著影响P
+test
+envfit.allfactors<-envfit(rda,env,permutations = 999)   ###检验所有环境因子对模型的影响P
+envfit.allfactors
+r2<-data.frame(r2=envfit.allfactors$vectors$r)
+r2$factor<-row.names(r2)
+r2$pvalue<-envfit.allfactors$vectors$pvals
+r2$color<-ifelse(r2$pvalue>=0.05,"olivedrab1","mediumpurple2")
+
+Pvalue<-envfit.allfactors$vectors$pvals
+(r.fig<-ggplot()+
+    geom_point(data=r2,aes(x=r2,y=factor,color=color,size=r2))+
+    geom_segment(data=r2,aes(x=0,xend=r2,y=factor,yend=factor),size=1))
+
+
+rda.sample<-data.frame(rdaI$sites[,1:2])   ###提取样本得分
+class<-data.frame(class=c(rep("S",4),rep("RF",3),rep("A",3)))
+rda.sample$class<-class$class
+
+rda.otu<-data.frame(rdaI$species[,1:2])                 ###提取otu得分
+rda.otu$phylum<-row.names(rda.otu)
+
+rda.env<-data.frame(rdaI$biplot[,1:2])            ###提取环境因子得分
+rda.env$factor<-row.names(rda.env)
+
+rdaI$concont$importance                                   ###提取RDA的x轴和y轴得分比较麻烦，需要经过3个步骤
+
+dev.new()
+(rda.fig<-
+    ggplot()+
+    geom_vline(xintercept = 0, color = 'grey20', size = 0.5,linetype="dashed")+
+    geom_hline(yintercept = 0, color = 'grey20', size = 0.5,linetype="dashed")+
+    theme_bw()+theme(panel.grid.major=element_line(color=NA),panel.grid.minor=element_blank())+
+    geom_point(data=rda.sample,aes(x=RDA1,y=RDA2,color=class),size=5)+
+    scale_color_manual(values =c("darkgoldenrod1","darkolivegreen2","deepskyblue2"),limits=c("A","RF","S"))+
+    geom_segment(data=rda.env,aes(x=0,xend=RDA1*5,y=0,yend=RDA2*5),color="dodgerblue4",size=1,
+                 arrow=arrow(angle = 35,length=unit(0.2,"cm")))+
+    geom_text(data=rda.env,aes(x=RDA1*5.1,y=RDA2*5.1,label=factor),size=4,color="dodgerblue4")+
+    geom_segment(data=rda.otu,aes(x=0,xend=RDA1,y=0,yend=RDA2),colour="coral",size=1,
+                 arrow=arrow(angle = 35,length=unit(0.2,"cm")))+
+    geom_text(data=rda.otu,aes(x=RDA1,y=RDA2,label=phylum),colour="coral",size=4))
+
+### 群落组成与土壤
+# 土壤碳
+env_fac<-read.csv("RDA分析多样性.csv",row.names = 1)
+env<-data.frame(env_fac[,c(21:24)])
+fac<-data.frame(env_fac[,34:40])
+
+decorana(fac)
+
+rda<-rda(fac~.,env, scale=TRUE)
+rdaI<-summary(rda,scaling = 1)
+rdaI$concont$importance
+axixtest<-anova(rda,by="axis",permutations = 999)
+axixtest$`Pr(>F)`<-p.adjust(axixtest$`Pr(>F)`,method = "fdr")
+
+vif.cca(rda)
+plot(rda)
+
+env<-env[,-8]
+env<-env[,-6]
+env<-env[,-4]
+env<-env[,-7]
+
+
+set.seed(634531)
+test<-permutest(rda,permutations = 999)   ###检验环境因子整体对模型的显著影响P
+test
+envfit.allfactors<-envfit(rda,env,permutations = 999)   ###检验所有环境因子对模型的影响P
+envfit.allfactors
+r2<-data.frame(r2=envfit.allfactors$vectors$r)
+r2$factor<-row.names(r2)
+r2$pvalue<-envfit.allfactors$vectors$pvals
+r2$color<-ifelse(r2$pvalue>=0.05,"olivedrab1","mediumpurple2")
+
+Pvalue<-envfit.allfactors$vectors$pvals
+(r.fig<-ggplot()+
+    geom_point(data=r2,aes(x=r2,y=factor,color=color,size=r2))+
+    geom_segment(data=r2,aes(x=0,xend=r2,y=factor,yend=factor),size=1))
+
+
+rda.sample<-data.frame(rdaI$sites[,1:2])   ###提取样本得分
+class<-data.frame(class=c(rep("S",4),rep("RF",3),rep("A",3)))
+rda.sample$class<-class$class
+
+rda.otu<-data.frame(rdaI$species[,1:2])                 ###提取otu得分
+rda.otu$phylum<-row.names(rda.otu)
+
+rda.env<-data.frame(rdaI$biplot[,1:2])            ###提取环境因子得分
+rda.env$factor<-row.names(rda.env)
+
+rdaI$concont$importance                                   ###提取RDA的x轴和y轴得分比较麻烦，需要经过3个步骤
+
+dev.new()
+(rda.fig<-
+    ggplot()+
+    geom_vline(xintercept = 0, color = 'grey20', size = 0.5,linetype="dashed")+
+    geom_hline(yintercept = 0, color = 'grey20', size = 0.5,linetype="dashed")+
+    theme_bw()+theme(panel.grid.major=element_line(color=NA),panel.grid.minor=element_blank())+
+    geom_point(data=rda.sample,aes(x=RDA1,y=RDA2,color=class),size=5)+
+    scale_color_manual(values =c("darkgoldenrod1","darkolivegreen2","deepskyblue2"),limits=c("A","RF","S"))+
+    geom_segment(data=rda.env,aes(x=0,xend=RDA1*5,y=0,yend=RDA2*5),color="dodgerblue4",size=1,
+                 arrow=arrow(angle = 35,length=unit(0.2,"cm")))+
+    geom_text(data=rda.env,aes(x=RDA1*5.1,y=RDA2*5.1,label=factor),size=4,color="dodgerblue4")+
+    geom_segment(data=rda.otu,aes(x=0,xend=RDA1,y=0,yend=RDA2),colour="coral",size=1,
+                 arrow=arrow(angle = 35,length=unit(0.2,"cm")))+
+    geom_text(data=rda.otu,aes(x=RDA1,y=RDA2,label=phylum),colour="coral",size=4))
+
